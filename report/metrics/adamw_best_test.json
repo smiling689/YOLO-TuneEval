@@ -1,0 +1,24 @@
+{
+  "model": "runs/train/yolov8n_sku110k_adamw_full/weights/best.pt",
+  "data": "data/sku110k.yaml",
+  "split": "test",
+  "imgsz": 640,
+  "batch": 32,
+  "device": "6",
+  "save_dir": "/home/hfbn/YOLO-TuneEval/runs/detect/runs/eval/adamw_best_test",
+  "speed": {
+    "preprocess": 0.8474341893546423,
+    "inference": 6.215466602405555,
+    "loss": 0.018031816148981323,
+    "postprocess": 4.972312010799295
+  },
+  "box": {
+    "precision": 0.9068566048624371,
+    "recall": 0.8355937035689203,
+    "map50": 0.8858313809793046,
+    "map50_95": 0.5470934901745357,
+    "maps": [
+      0.5470934901745357
+    ]
+  }
+}
