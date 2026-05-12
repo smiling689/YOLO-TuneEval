@@ -21,3 +21,5 @@ weights/
 # 额外验证图片和报告输出按需保留摘要，不提交原始大文件
 extra_images/
 report/outputs/
+
+.agentdocs/
