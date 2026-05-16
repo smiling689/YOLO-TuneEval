@@ -112,7 +112,7 @@
 
 ### 5.1 图片来源
 
-额外验证图片均来自 Wikimedia Commons，用于测试模型在非 SKU-110K 来源真实货架场景中的泛化表现。图片来源记录在 `extra_images/sources.md`。
+额外验证图片均来自 Wikimedia Commons，用于测试模型在非 SKU-110K 来源真实货架场景中的泛化表现。图片来源记录在 `docs/extra_image_sources.md`。
 
 | 图片 | 场景 |
 |---|---|
@@ -135,7 +135,7 @@
 
 - 微调前可视化：`report/outputs/extra_images/before/`
 - 微调后可视化：`report/outputs/extra_images/after/`
-- 对比摘要：`report/outputs/extra_images/extra_comparison.md`
+- 对比摘要：`docs/extra_image_comparison.md`
 
 ### 5.3 检测数量对比
 
@@ -178,8 +178,8 @@
 | 最佳权重 | `runs/train/yolov8n_sku110k_adamw_full/weights/best.pt` |
 | 微调前测试指标 | `report/metrics/baseline_yolov8n_test.json` |
 | 微调后测试指标 | `report/metrics/adamw_best_test.json` |
-| 指标摘要 | `report/metrics/adamw_comparison.md` |
-| 额外图片来源 | `extra_images/sources.md` |
+| 指标摘要 | `docs/adamw_comparison.md` |
+| 额外图片来源 | `docs/extra_image_sources.md` |
 | 额外图片对比输出 | `report/outputs/extra_images/` |
-| 额外图片对比摘要 | `report/outputs/extra_images/extra_comparison.md` |
-| 个人实验报告 | `report/personal_report.md` |
+| 额外图片对比摘要 | `docs/extra_image_comparison.md` |
+| 个人实验报告 | `docs/personal_report.md` |

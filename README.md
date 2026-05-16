@@ -1,45 +1,88 @@
-# YOLO模型微调和性能验证
+# YOLO-TuneEval
 
-***\*注：下划线部分为超链接，请按住Ctrl并单击鼠标以跟踪链接\****
+YOLOv8n + AdamW fine-tuning and evaluation on SKU-110K for dense supermarket shelf product detection.
 
-## 概述
+## Contents
 
-本次作业的目标是使用YOLO算法进行物体检测的微调和性能验证。学生将从提供的资源中选择YOLO模型和数据集，并对模型进行微调，以验证在不同数据集上的性能差异。本作业将基于 [Ultralytics YOLO](https://docs.ultralytics.com/zh/) 公布的开源代码和模型实施。
+- Dataset: SKU-110K converted to Ultralytics YOLO format.
+- Baseline model: COCO-pretrained `models/yolov8n.pt`.
+- Fine-tuned model: `runs/train/yolov8n_sku110k_adamw_full/weights/best.pt`.
+- Training configuration: `configs/adamw.yaml`.
+- Scripts: `scripts/prepare_sku110k.py`, `scripts/train_adamw.py`, `scripts/evaluate.py`, `scripts/predict_extra.py`.
+- Documentation and reports: `docs/`.
 
-## 步骤
+Large dataset assets, model weights, training outputs, and qualitative results are tracked with Git LFS.
 
-### 模型选择：
+## Setup
 
-访问 [模型页面](https://docs.ultralytics.com/zh/models/)，选择YOLOv3-v8版本进行实验。下载并加载所选模型。
+```bash
+git lfs pull
+python -m pip install -r requirements.txt
+```
 
-### 数据集选择：
+The experiment was run with CUDA on an NVIDIA RTX A6000. CPU execution is not recommended for full training.
 
-访问 [数据集页面](https://docs.ultralytics.com/zh/datasets/)，在“检测数据集”中选择适用于物体检测的数据集进行微调和测试。按照页面说明准备和预处理数据。请不要选择COCO数据集。
+## Data
 
-### 模型微调：
+The YOLO dataset config is `data/sku110k.yaml`.
 
-使用所选数据集对YOLO模型进行微调。详细记录微调过程中的关键参数和设置。微调指导请参考 [这里](https://docs.ultralytics.com/zh/modes/train/)。
+Prepared data is stored under:
 
-### 性能测试：
+```text
+data/processed/sku110k/
+```
 
-在微调前后，对模型在测试集上的性能进行测试。记录并比较模型在微调前后的性能差异。
+See `docs/data.md` for the data layout and regeneration command.
 
-### 额外验证 （需个人单独完成）：
+## Train
 
-每位学生需自行搜索五张相关图片，如选择SKU-110k数据集，则应从网上爬取5张超市货架图片。使用微调前后的模型对这些图片进行测试，并记录分析结果。
+```bash
+python scripts/train_adamw.py --config configs/adamw.yaml
+```
 
-## 提交内容 (个人报告)
+The completed full run is saved at:
 
-微调过程的详细记录。
+```text
+runs/train/yolov8n_sku110k_adamw_full/
+```
 
-微调前后在测试集上的性能比较。
+## Evaluate
 
-额外五张图片的测试结果及分析。
+Baseline YOLOv8n:
 
-## 评估标准 (个人评分)
+```bash
+python scripts/evaluate.py --weights models/yolov8n.pt --data data/sku110k.yaml --split test --output report/metrics/baseline_yolov8n_test.json
+```
 
-微调过程的准确性和完整性。
+AdamW fine-tuned model:
 
-对性能变化的分析深度和准确性。
+```bash
+python scripts/evaluate.py --weights runs/train/yolov8n_sku110k_adamw_full/weights/best.pt --data data/sku110k.yaml --split test --output report/metrics/adamw_best_test.json
+```
 
-额外图片测试的分析质量。
+## Extra Images
+
+```bash
+python scripts/predict_extra.py
+```
+
+Inputs are in `extra_images/`. Outputs are in `report/outputs/extra_images/`.
+
+## Results
+
+| Model | Precision | Recall | mAP@0.5 | mAP@0.5:0.95 |
+|---|---:|---:|---:|---:|
+| Baseline `models/yolov8n.pt` | 0.1549 | 0.0030 | 0.0008 | 0.0004 |
+| AdamW fine-tuned `best.pt` | 0.9069 | 0.8356 | 0.8858 | 0.5471 |
+
+The fine-tuned model also detects dense products on five external shelf images, while the original COCO-pretrained model mostly fails on the SKU-110K single-class setting.
+
+## Documentation
+
+- `docs/personal_report.md`: personal experiment report.
+- `docs/adamw_comparison.md`: metric summary.
+- `docs/extra_image_comparison.md`: qualitative comparison on five external images.
+- `docs/extra_image_sources.md`: external image sources.
+- `docs/data.md`: data layout and preparation notes.
+- `docs/team_assignment.md`: group division and experiment design.
+- `docs/assignment.md`: original assignment requirements.
