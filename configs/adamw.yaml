@@ -1,0 +1,17 @@
+# YOLOv8n + AdamW 优化器微调配置。
+# 除 optimizer 外，其余关键参数应尽量与 Baseline 组保持一致。
+model: models/yolov8n.pt
+data: data/sku110k.yaml
+epochs: 100
+imgsz: 640
+batch: 16
+optimizer: AdamW
+lr0: 0.001
+weight_decay: 0.01
+patience: 20
+workers: 8
+seed: 42
+deterministic: true
+project: runs/detect
+name: yolov8n_sku110k_adamw
+exist_ok: true

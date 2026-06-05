@@ -1,0 +1,12 @@
+[
+  {
+    "model": "models/yolov8n.pt",
+    "source": "extra_images",
+    "save_dir": "/home/hfbn/YOLO-TuneEval/report/outputs/extra_images/before"
+  },
+  {
+    "model": "runs/train/yolov8n_sku110k_adamw_full/weights/best.pt",
+    "source": "extra_images",
+    "save_dir": "/home/hfbn/YOLO-TuneEval/report/outputs/extra_images/after"
+  }
+]
