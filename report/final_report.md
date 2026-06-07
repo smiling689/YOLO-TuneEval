@@ -78,9 +78,32 @@ SKU-110K 原始标注为 CSV 格式，其中包含图片名称、边界框坐标
 
 ### 训练过程观察
 
-训练开始后，模型在前几个 epoch 中快速适应 SKU-110K 的单类别密集检测任务。验证集 mAP@0.5 从第 1 个 epoch 的 0.6546 提升到第 10 个 epoch 的 0.8398，说明预训练特征能够较快迁移到货架商品检测场景。
+训练开始后，模型在前几个 epoch 中快速适应 SKU-110K 的单类别密集检测任务。验证集 mAP@0.5 从第 1 个 epoch 的 0.6546 提升到第 10 个 epoch 的 0.8398，mAP@0.5:0.95 从 0.3356 提升到 0.4956，说明 COCO 预训练特征能够较快迁移到货架商品检测场景。
 
 中后期训练进入缓慢提升阶段，mAP@0.5:0.95 从约 0.50 逐步提升到 0.54 左右。最佳验证集结果出现在 epoch 76，之后指标基本稳定并略有回落，最终由于 early stopping 在 epoch 96 停止。该过程说明模型已经基本收敛，继续训练收益有限。
+
+<div align="center"><img src="figures/adamw_epoch_metrics.png" width="48%"></div>
+
+从逐 epoch 指标曲线看，训练过程可以分为三个阶段。第一阶段为 epoch 1 到 10，指标提升最快，Precision 从 0.7001 上升到 0.8730，Recall 从 0.6472 上升到 0.7889，mAP@0.5:0.95 提升 0.1600。这一阶段主要对应模型从 COCO 类别体系快速转向 SKU-110K 单类别 `object` 检测任务。
+
+第二阶段为 epoch 10 到 60，模型继续学习密集货架目标的定位细节。mAP@0.5 从 0.8398 提升到 0.8816，mAP@0.5:0.95 从 0.4956 提升到 0.5397。该阶段 mAP@0.5 的增长幅度已经明显小于前 10 个 epoch，但更严格的 mAP@0.5:0.95 仍持续提升，说明模型主要在改善边界框定位质量，而不是单纯增加检出数量。
+
+第三阶段为 epoch 60 到 96，指标进入平台期。epoch 76 达到最佳验证集 mAP@0.5:0.95 0.5427，epoch 96 结束时为 0.5400，仅下降 0.0028。Precision 和 Recall 在后期也稳定在约 0.905 和 0.834 附近，说明训练后期没有明显崩塌，但继续训练只能带来很小收益。
+
+<div align="center"><img src="figures/adamw_epoch_losses.png" width="48%"></div>
+
+Loss 曲线也体现出类似趋势。训练 box loss 从 epoch 1 的 1.7686 降到 epoch 96 的 1.3031，训练 cls loss 从 1.1220 降到 0.5657，说明模型持续优化目标定位和单类别分类。验证 box loss 在前期下降明显，后期维持在约 1.315 到 1.319 之间；结合 mAP 曲线可以看出，epoch 76 之后虽然训练 loss 仍缓慢下降，但验证指标不再同步提升，说明此时模型已经接近泛化性能上限。由于本次 AdamW 训练日志中的 `val/cls_loss` 记录为 `inf`，图中只展示训练 loss、验证 box loss 和验证 dfl loss，避免使用无效数值误导分析。
+
+关键 epoch 指标如下：
+
+| Epoch | 阶段 | Precision | Recall | mAP@0.5 | mAP@0.5:0.95 | train box loss | train cls loss |
+|---:|---|---:|---:|---:|---:|---:|---:|
+| 1 | 初始适配 | 0.7001 | 0.6472 | 0.6546 | 0.3356 | 1.7686 | 1.1220 |
+| 10 | 快速提升结束 | 0.8730 | 0.7889 | 0.8398 | 0.4956 | 1.4404 | 0.6869 |
+| 30 | 中期稳定学习 | 0.8947 | 0.8168 | 0.8676 | 0.5241 | 1.3815 | 0.6308 |
+| 60 | 平台期前 | 0.9044 | 0.8338 | 0.8816 | 0.5397 | 1.3509 | 0.6018 |
+| 76 | 最佳验证结果 | 0.9067 | 0.8357 | 0.8840 | 0.5427 | 1.3400 | 0.5901 |
+| 96 | Early stopping | 0.9054 | 0.8344 | 0.8821 | 0.5400 | 1.3031 | 0.5657 |
 
 本人 AdamW 训练期间最佳验证集结果如下：
 
@@ -148,6 +171,10 @@ SKU-110K 原始标注为 CSV 格式，其中包含图片名称、边界框坐标
 
 刘易函关闭 Mosaic 后，验证集最佳 mAP@0.5:0.95 为 0.5432，与本人 AdamW 验证集最佳 mAP@0.5:0.95 0.5427 非常接近，mAP@0.5 也保持在约 0.885 的水平。这说明在 SKU-110K 上，即使关闭 Mosaic，YOLOv8n 仍能学习到较强的密集货架商品检测能力。
 
+<div align="center"><img src="figures/adamw_vs_nomosaic_map.png" width="48%"></div>
+
+从逐 epoch 曲线看，关闭 Mosaic 组在第 1 个 epoch 的 mAP@0.5 和 mAP@0.5:0.95 分别为 0.7556 和 0.4114，高于 AdamW 组的 0.6546 和 0.3356；到 epoch 10 时，两组 mAP@0.5 已经非常接近，分别为 0.8388 和 0.8398。中后期两组曲线几乎重合，关闭 Mosaic 组在 epoch 90 达到最佳 mAP@0.5:0.95 0.5432，AdamW 组在 epoch 76 达到 0.5427。该结果说明关闭 Mosaic 并没有导致明显性能下降，反而在早期收敛速度上略快，但最终上限与 AdamW 组非常接近。
+
 Mosaic 通常可以增加场景组合和尺度变化，对通用检测任务有帮助。但 SKU-110K 本身已经具有高度密集、重复、多目标的图像特征，关闭 Mosaic 后并没有造成明显性能崩塌。这可能说明该数据集自身的场景复杂度已经足够高，或者默认的其他增强策略仍然提供了足够的泛化约束。
 
 ### 综合比较
@@ -199,11 +226,11 @@ Mosaic 通常可以增加场景组合和尺度变化，对通用检测任务有�
 
 | 图片 | 微调前检测结果 | 微调后检测结果 |
 |---|---|---|
-| 咖啡货架 | ![咖啡货架微调前](outputs/extra_images/before/01_coffee_shelves_bulgaria.jpg){width=2.7in} | ![咖啡货架微调后](outputs/extra_images/after/01_coffee_shelves_bulgaria.jpg){width=2.7in} |
-| 谷物/早餐食品货架 | ![谷物货架微调前](outputs/extra_images/before/02_spar_cereal_shelves.jpg){width=2.7in} | ![谷物货架微调后](outputs/extra_images/after/02_spar_cereal_shelves.jpg){width=2.7in} |
-| 调味酱货架 | ![调味酱货架微调前](outputs/extra_images/before/03_spar_sauce_shelves.jpg){width=2.7in} | ![调味酱货架微调后](outputs/extra_images/after/03_spar_sauce_shelves.jpg){width=2.7in} |
-| 宠物食品货架 | ![宠物食品货架微调前](outputs/extra_images/before/04_rema_pet_food_shelves.jpg){width=2.7in} | ![宠物食品货架微调后](outputs/extra_images/after/04_rema_pet_food_shelves.jpg){width=2.7in} |
-| 罐头商品货架 | ![罐头商品货架微调前](outputs/extra_images/before/05_mackerel_shelves_norway.jpg){width=2.7in} | ![罐头商品货架微调后](outputs/extra_images/after/05_mackerel_shelves_norway.jpg){width=2.7in} |
+| 咖啡货架 | <img src="outputs/extra_images/before/01_coffee_shelves_bulgaria.jpg" alt="咖啡货架微调前" width="45%"> | <img src="outputs/extra_images/after/01_coffee_shelves_bulgaria.jpg" alt="咖啡货架微调后" width="45%"> |
+| 谷物/早餐食品货架 | <img src="outputs/extra_images/before/02_spar_cereal_shelves.jpg" alt="谷物货架微调前" width="45%"> | <img src="outputs/extra_images/after/02_spar_cereal_shelves.jpg" alt="谷物货架微调后" width="45%"> |
+| 调味酱货架 | <img src="outputs/extra_images/before/03_spar_sauce_shelves.jpg" alt="调味酱货架微调前" width="45%"> | <img src="outputs/extra_images/after/03_spar_sauce_shelves.jpg" alt="调味酱货架微调后" width="45%"> |
+| 宠物食品货架 | <img src="outputs/extra_images/before/04_rema_pet_food_shelves.jpg" alt="宠物食品货架微调前" width="45%"> | <img src="outputs/extra_images/after/04_rema_pet_food_shelves.jpg" alt="宠物食品货架微调后" width="45%"> |
+| 罐头商品货架 | <img src="outputs/extra_images/before/05_mackerel_shelves_norway.jpg" alt="罐头商品货架微调前" width="45%"> | <img src="outputs/extra_images/after/05_mackerel_shelves_norway.jpg" alt="罐头商品货架微调后" width="45%"> |
 
 ### 定性分析
 
@@ -246,6 +273,7 @@ Mosaic 通常可以增加场景组合和尺度变化，对通用检测任务有�
 | 微调前测试指标 | `report/metrics/baseline_yolov8n_test.json` |
 | AdamW 测试指标 | `report/metrics/adamw_best_test.json` |
 | 额外图片对比摘要 | `docs/extra_image_comparison.md` |
+| 报告新增图像 | `report/figures/` |
 | 陈奕莱结果 | `others/陈奕莱/res.png` |
 | 卓识结果 | `others/卓识/res.png` |
 | 刘易函结果 | `others/刘易函/finetune3/results.csv` |
